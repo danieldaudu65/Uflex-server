@@ -1,41 +1,22 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const connectDB = require("./config/db");
+
 dotenv.config();
-const cors = require('cors')
-
-
 const app = express();
 
-mongoose.connect(process.env.MONGO_URI)
-    .catch(error => console.log(`DB Connection error: ${error}`));
-const con = mongoose.connection;
+// connect to DB
+connectDB();
 
-//handle error while opening dbb 
-
-con.on('open', error => {
-    if (!error)
-        console.log('DB Connection Succesful');
-    else
-        console.log(`Error Connecting to DB: ${error}`);
-})
-
-// handle mongoose disconnect from mongodb
-
-con.on('disconnected', error => {
-    console.log(`Mongoose lost connection with MongoDB:${error}`)
-})
-
-// parse Json data coming in the request body 
+// middlewares
 app.use(express.json());
 app.use(cors());
 
+// routes
+app.use("/auth", require("./routes_user/auth"));
+app.use("/authenticateUser", require("./routes_user/authenticateUser"));
 
-// gain access to my routes
-app.use("/auth", require('./routes/auth'));
-app.use("/authenticateUser", require('./routes/authenticateUser'))
-
-const PORT = process.env.PORT 
-
-app.listen(PORT, () => console.log(`server running on port ${PORT}`)
-);
+// server
+const PORT = process.env.PORT;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
