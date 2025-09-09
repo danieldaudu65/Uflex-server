@@ -4,6 +4,9 @@ const userSchema = new mongoose.Schema({
     email: { type: String, unique: true },
     password: String,
     fullName: String,
+    phoneNunber:String,
+      passwordHash: { type: String, required: true },
+  profilePicture: { type: String }
 },
 { collection: 'users' });
 const model = mongoose.model('User', userSchema);
