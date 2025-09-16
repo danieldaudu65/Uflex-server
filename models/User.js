@@ -6,7 +6,10 @@ const userSchema = new mongoose.Schema({
   fullName: String,
   phoneNunber: String,
   passwordHash: { type: String, required: true },
-  profilePicture: { type: String }
+  profilePicture: { type: String },
+
+  is_blocked : { type: Boolean, required: false },
+  is_active : { type: Boolean, required: true },
 },
   { collection: 'users' });
 const model = mongoose.model('User', userSchema);

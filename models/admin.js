@@ -6,7 +6,9 @@ const adminSchema = new mongoose.Schema({
     password: String,
     email: String,
     otp: String,
-    otpTime: Date
+    otpTime: Date,
+
+    is_block: { type: Boolean, default: false }
 }, { collection: 'admins' })
 
 module.exports = mongoose.model('Admin', adminSchema);
