@@ -17,6 +17,9 @@ app.use(cors());
 // routes
 app.use("/auth", require("./routes_user/auth"));
 app.use("/authenticateUser", require("./routes_user/authenticateUser"));
+app.use("/bookingController", require("./routes_user/bookingController"));
+app.use("/paymentController", require("./routes_user/paymentController"));
+app.use("/vehicleController", require("./routes_user/vehicleController"));
 
 // server
 const PORT = process.env.PORT;
