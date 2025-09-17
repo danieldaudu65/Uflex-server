@@ -7,7 +7,6 @@ const Statistics = require("../models/statistics"); // adjust path if needed
 // Get statistics record
 route.post('/get_record', async (req, res) => {
     try {
-        // Assuming you only have one statistics document (doc_type: admin)
         const stats = await Statistics.findOne({ doc_type: 'admin' });
 
         if (!stats) {

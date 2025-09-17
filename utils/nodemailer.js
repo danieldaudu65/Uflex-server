@@ -74,6 +74,8 @@ const sendOTP = async (email, otp) => {
   }
 };
 
+
+
 module.exports = {
   sendPasswordReset,
   sendOTP,

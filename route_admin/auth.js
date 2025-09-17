@@ -31,12 +31,11 @@ route.post('/signup', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 })
-
 route.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return res.status(400).json('Please fill in the correct details');
+        return res.status(400).json({ message: 'Please fill in the correct details' });
     }
 
     try {
@@ -46,21 +45,29 @@ route.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, admin.password);
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: admin._id, email: admin.email },
+            process.env.JWT_SECRET || "secret123", 
+            { expiresIn: "1d" }
+        );
 
         res.status(200).json({
-            message: 'Login successful, OTP sent',
+            message: 'Login successful',
             token,
-            // otp, // in production you would email or SMS this, not expose it in response
             admin: {
                 id: admin._id,
-                username: admin.username,
-                email: admin.email
+                name: admin.name,
+                email: admin.email,
+                number: admin.number
             }
         });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
-})
+});
+
 
 
 
