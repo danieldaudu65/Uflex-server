@@ -74,8 +74,27 @@ const sendOTP = async (email, otp) => {
   }
 };
 
+const sendMail = async (to, subject, html) => {
+  try {
+    const info = await transport.sendMail({
+      from: process.env.MAIL_USER, // or your brand name
+      to,
+      subject,
+      html,
+    });
+
+    console.log("Email sent:", info.response);
+    return info;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return { msg: "Error sending email", error };
+  }
+};
+
+
 module.exports = {
   sendPasswordReset,
   sendOTP,
+  sendMail,
   transport
 };
