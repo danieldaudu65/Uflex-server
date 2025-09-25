@@ -1,26 +1,32 @@
 const mongoose = require("mongoose");
 
-const PaymentSchema = new mongoose.Schema({
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true },
+const PaymentSchema = new mongoose.Schema(
+  {
+    booking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", required: true },
+    userEmail: { type: String, required: true },
 
-  // price set for the booking
-  amount: { type: Number },
+    method: {
+      type: String,
+      enum: ["transfer", "card", "cash"],
+      default: "transfer",
+    },
 
-  // always offline, so no need for "card"
-  method: { type: String, enum: ["transfer", "cash"], required: true },
+    amount: { type: Number, required: true },
 
-  // status flow: awaiting_admin -> awaiting_user -> paid -> confirmed
-  status: {
-    type: String,
-    enum: ["awaiting_admin", "awaiting_user", "paid", "confirmed"],
-    default: "awaiting_admin"
+    status: {
+      type: String,
+      enum: [
+        "awaiting_admin",   // admin sets payment details
+        "awaiting_user",    // user needs to upload proof
+        "paid",             // user uploaded proof
+        "confirmed",        // admin confirmed payment
+      ],
+      default: "awaiting_admin",
+    },
+
+    paymentProof: { type: String }, // uploaded receipt/image URL
   },
-
-  // user uploads screenshot / receipt ID
-  paymentProof: { type: String },
-
-  // email of user (helps with notifications)
-  userEmail: { type: String, required: true }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Payment", PaymentSchema);

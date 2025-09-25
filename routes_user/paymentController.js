@@ -11,28 +11,45 @@ const router = express.Router();
  */
 router.put('/:id/user-paid', async (req, res) => {
   try {
-    const payment = await Payment.findOneAndUpdate(
-      { _id: req.params.id, userEmail: req.user.email }, // ensure it's their payment
-      {
-        status: 'paid',
-        paymentProof: req.body.paymentProof, // e.g. receipt image URL
-      },
-      { new: true }
-    ).populate('booking');
+    const { paymentProof } = req.body;
+
+    // Find payment belonging to the user
+    const payment = await Payment.findOne({
+      _id: req.params.id,
+      userEmail: req.user.email,
+    }).populate('booking');
 
     if (!payment) {
-      return res.status(404).json({ status: 'Error', msg: 'Payment not found' });
+      return res.status(404).send({ status: 'Error', msg: 'Payment not found' });
     }
+
+    // Prevent skipping statuses
+    if (payment.status !== 'awaiting_user') {
+      return res.status(400).send({
+        status: 'Error',
+        msg: `Invalid action. Current status is "${payment.status}"`,
+      });
+    }
+
+    // Update status + proof
+    payment.status = 'paid';
+    payment.paymentProof = paymentProof;
+    await payment.save();
 
     // Notify user
     await sendMail(
       payment.userEmail,
       'Payment Submitted',
-      `Your payment proof for booking ${payment.booking._id} has been submitted. Please wait for confirmation.`
+      `Your payment proof for booking ${payment.booking._id} has been submitted. Please wait for admin confirmation.`
     );
 
-    res.send({ status: 'Success', msg: 'Payment marked as paid', payment });
+    res.status(200).send({
+      status: 'Success',
+      msg: 'Payment marked as paid',
+      payment,
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).send({ status: 'Error', msg: error.message });
   }
 });
@@ -42,10 +59,14 @@ router.put('/:id/user-paid', async (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const payments = await Payment.find({ userEmail: req.user.email }).populate('booking');
-    res.status(200).json({ status: 'Success', payments });
+    const payments = await Payment.find({ userEmail: req.user.email })
+      .populate('booking')
+      .sort({ createdAt: -1 });
+
+    res.status(200).send({ status: 'Success', payments });
   } catch (error) {
-    res.status(500).json({ status: 'Error', msg: error.message });
+    console.error(error);
+    res.status(500).send({ status: 'Error', msg: error.message });
   }
 });
 
@@ -54,13 +75,19 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const payment = await Payment.findOne({ _id: req.params.id, userEmail: req.user.email }).populate('booking');
+    const payment = await Payment.findOne({
+      _id: req.params.id,
+      userEmail: req.user.email,
+    }).populate('booking');
+
     if (!payment) {
-      return res.status(404).json({ status: 'Error', msg: 'Payment not found' });
+      return res.status(404).send({ status: 'Error', msg: 'Payment not found' });
     }
-    res.status(200).json({ status: 'Success', payment });
+
+    res.status(200).send({ status: 'Success', payment });
   } catch (error) {
-    res.status(500).json({ status: 'Error', msg: error.message });
+    console.error(error);
+    res.status(500).send({ status: 'Error', msg: error.message });
   }
 });
 
