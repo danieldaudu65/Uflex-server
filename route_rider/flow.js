@@ -3,33 +3,6 @@ const Booking = require("../models/booking");
 const rider = require("../models/rider");
 const router = express.Router();
 
-// ====================== GET RIDER DASHBOARD ======================
-router.get("/dashboard", async (req, res) => {
-  try {
-    const riderId = req.user._id; // assuming rider is logged in
-
-    const assignedCount = await Booking.countDocuments({ rider: riderId });
-    const pendingCount = await Booking.countDocuments({
-      rider: riderId,
-      bookingStatus: "requested",
-    });
-    const completedCount = await Booking.countDocuments({
-      rider: riderId,
-      bookingStatus: "completed",
-    });
-
-    res.status(200).json({
-      status: "Success",
-      dashboard: {
-        assigned: assignedCount,
-        pending: pendingCount,
-        completed: completedCount,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ status: "Error", msg: error.message });
-  }
-});
 
 // ====================== GET RIDER BOOKINGS ======================
 router.get("/bookings", async (req, res) => {
@@ -100,12 +73,6 @@ router.put("/bookings/:id/status", async (req, res) => {
 
 module.exports = router;
 
-
-// const express = require("express");
-// const Booking = require("../models/booking");
-// const Rider = require("../models/rider");
-
-// const router = express.Router();
 
 // // ====================== ASSIGN RIDER TO BOOKING ======================
 // router.put("/assign-rider/:bookingId", async (req, res) => {

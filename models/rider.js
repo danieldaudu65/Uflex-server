@@ -10,6 +10,8 @@ const RiderSchema = new mongoose.Schema(
 
     // Rider status (active = can take trips)
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    blacklistedTokens: [{ type: String }],
+
 
     // Rider may have assigned bookings
     assignedBookings: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
