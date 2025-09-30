@@ -38,7 +38,7 @@ router.post('/signup', async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ msg: 'You signed up successfully' });
+    res.status(201).send({ msg: 'You signed up successfully' });
 
   } catch (error) {
     console.error(error);
@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Compare password with hashed version
-    if (await bcrypt.compare(password, user.passwordHash)) { // 👈 FIXED
+    if (await bcrypt.compare(password, user.passwordHash)) { //compare
       const token = jwt.sign(
         { userId: user._id, email: user.email },
         process.env.JWT_SECRET,
