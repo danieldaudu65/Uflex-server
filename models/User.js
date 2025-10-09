@@ -3,15 +3,16 @@ const mongoose = require('mongoose')
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
-  fullName: String,
-  phoneNunber: String,
+  firstName: String,
+  lastName: String,
+  phoneNumber: String,
   passwordHash: { type: String, required: true },
   profilePicture: { type: String },
 
-  is_blocked : { type: Boolean, required: false },
-  is_active : { type: Boolean, required: true },
+  is_blocked: { type: Boolean, default: false },
+  is_active: { type: Boolean, default: true },
 },
-  { collection: 'users' });
+  { collection: 'users', timestamps: true });
 const model = mongoose.model('User', userSchema);
 
 module.exports = model

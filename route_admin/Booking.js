@@ -7,25 +7,29 @@ const jwt = require("jsonwebtoken");
 
 
 // Get all bookings
+// Get all bookings
 route.get('/all_bookings', async (req, res) => {
-    try {
-        const bookings = await Booking.find().sort({ createdAt: -1 }); 
-        res.status(200).json({
-            message: "All bookings fetched successfully",
-            total: bookings.length,
-            data: bookings
-        });
-    } catch (err) {
-        console.error("Error fetching bookings:", err);
-        res.status(500).json({ message: "Server error" });
-    }
+  try {
+    const bookings = await Booking.find()
+      .populate('user', 'firstName lastName phoneNunber email') // populate name and email from user model
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "All bookings fetched successfully",
+      total: bookings.length,
+      data: bookings,
+    });
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 
 
 //  Get one booking (requires token in body)
 route.post('/get_booking/:id', async (req, res) => {
-    const { token,id  } = req.body;
+    const { token, id } = req.body;
 
     if (!token) {
         return res.status(400).json({ message: "Token is required" });

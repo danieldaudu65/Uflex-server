@@ -1,9 +1,11 @@
 const Admin = require('../models/admin');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const express = require('express')
 const route = express.Router()
 const crypto = require('crypto');
+
+const bcrypt = require('bcrypt');
+
 const { sendOTP } = require('../utils/nodemailer');
 // const sendOTP = require('../utils/nodemailer');
 
@@ -31,6 +33,8 @@ route.post('/signup', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 })
+
+
 route.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -42,13 +46,16 @@ route.post('/login', async (req, res) => {
         const admin = await Admin.findOne({ email });
         if (!admin) return res.status(404).json({ message: 'Admin not found' });
 
-        const isMatch = await bcrypt.compare(password, admin.password);
+        const isMatch = await bcrypt.hash(password, 10)
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
         // Generate JWT token
         const token = jwt.sign(
-            { id: admin._id, email: admin.email },
-            process.env.JWT_SECRET || "secret123", 
+            {
+                id: admin._id, email: admin.email, role: admin.role,  // ✅ include this
+                name: admin.name,
+            },
+            process.env.JWT_SECRET || "secret123",
             { expiresIn: "1d" }
         );
 
@@ -59,7 +66,8 @@ route.post('/login', async (req, res) => {
                 id: admin._id,
                 name: admin.name,
                 email: admin.email,
-                number: admin.number
+                number: admin.number,
+                role: admin.role
             }
         });
     } catch (err) {

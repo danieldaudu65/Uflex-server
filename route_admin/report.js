@@ -4,14 +4,15 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/admin");
 const Report = require("../models/report");
-const Stats = require("../models/stats"); 
+const Stats = require("../models/statistics");
 
 // Helper function: verify admin
 async function verifyAdmin(token) {
   if (!token) throw new Error("Token is required");
 
+
   const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret123");
-  const admin = await Admin.findOne({ _id: decoded._id }).select("-password").lean();
+  const admin = await Admin.findById(decoded.id);
 
   if (!admin) throw new Error("Admin not found");
   if (admin.is_block === true) throw new Error("Account has been blocked, please contact master admin");

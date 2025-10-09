@@ -1,5 +1,5 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -62,20 +62,27 @@ router.post('/login', async (req, res) => {
     }
 
     // Compare password with hashed version
-    if (await bcrypt.compare(password, user.passwordHash)) { //compare
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+    if (isMatch) {
       const token = jwt.sign(
         { userId: user._id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: '30m' }
+        { expiresIn: '7d' } // 🔥 Token now valid for 7 days
       );
 
       user.is_online = true;
       await user.save();
 
+      // Clean user object before sending
+      const userObj = user.toObject();
+      delete userObj.passwordHash;
+      delete userObj.__v;
+
       res.status(200).send({
         status: 'Success',
         msg: 'You have successfully logged in',
-        user,
+        user: userObj,
         token
       });
     } else {
@@ -87,6 +94,7 @@ router.post('/login', async (req, res) => {
     res.status(500).send({ status: "error", msg: error.message });
   }
 });
+
 
 // Forgot password route
 router.post('/forgot-password', async (req, res) => {
