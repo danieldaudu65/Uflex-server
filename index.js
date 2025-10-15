@@ -16,19 +16,16 @@ connectDB();
 app.use(express.json());
 
 // Allowed origins
-const allowedOrigins = [
-  "http://localhost:5175",
+const allowedOrigins = ["http://localhost:5175",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5176",
-  "http://uflexshuttle.com/",
-  "https://uflexshuttle.com/",
-  "http://admin.uflexshuttle.com/",
-  "https://admin.uflexshuttle.com/",
-  "http://rider.uflexshuttle.com/",
-  "https://rider.uflexshuttle.com/"
-
-];
+  "http://uflexshuttle.com",
+  "https://uflexshuttle.com",
+  "http://admin.uflexshuttle.com",
+  "https://admin.uflexshuttle.com",
+  "http://rider.uflexshuttle.com",
+  "https://rider.uflexshuttle.com"];
 
 // CORS middleware
 app.use(cors({
