@@ -21,6 +21,13 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5176",
+  "http://uflexshuttle.com/",
+  "https://uflexshuttle.com/",
+  "http://admin.uflexshuttle.com/",
+  "https://admin.uflexshuttle.com/",
+  "http://rider.uflexshuttle.com/",
+  "https://rider.uflexshuttle.com/"
+
 ];
 
 // CORS middleware
@@ -38,7 +45,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 24 * 60 * 60 * 1000, 
+    maxAge: 24 * 60 * 60 * 1000,
   },
 }));
 
@@ -52,19 +59,19 @@ app.use("/vehicleController", require("./routes_user/vehicleController"));
 app.use('/user_report', require("./routes_user/report"))
 
 // Routes Admin
-app.use('/admin_auth' , require('./route_admin/auth'))
-app.use('/admin_admin' , require('./route_admin/admin'))
-app.use('/admin_booking' , require('./route_admin/Booking'))
-app.use('/admin_dashboard' , require('./route_admin/dashboard'))
-app.use('/admin_report' , require('./route_admin/report'))
-app.use('/admin_user' , require('./route_admin/user'))
-app.use('/admin_rider' , require('./route_admin/rider'))
-app.use('/admin_notis' , require('./route_admin/notification'))
+app.use('/admin_auth', require('./route_admin/auth'))
+app.use('/admin_admin', require('./route_admin/admin'))
+app.use('/admin_booking', require('./route_admin/Booking'))
+app.use('/admin_dashboard', require('./route_admin/dashboard'))
+app.use('/admin_report', require('./route_admin/report'))
+app.use('/admin_user', require('./route_admin/user'))
+app.use('/admin_rider', require('./route_admin/rider'))
+app.use('/admin_notis', require('./route_admin/notification'))
 
 // Rider Routers
-app.use('/rider_auth' , require('./route_rider/auth'))
-app.use('/rider_dashboard' , require('./route_rider/dashboard'))
-app.use('/rider_booking' , require('./route_rider/Booking'))
+app.use('/rider_auth', require('./route_rider/auth'))
+app.use('/rider_dashboard', require('./route_rider/dashboard'))
+app.use('/rider_booking', require('./route_rider/Booking'))
 
 
 // Server
