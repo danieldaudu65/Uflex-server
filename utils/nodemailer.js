@@ -308,14 +308,14 @@ const sendPaymentConfirmedEmail = async (booking) => {
   const user = booking.user;
   const html = `
     <p>Hi ${user.firstName || ''},</p>
-    <p>Your payment for booking <strong>${booking._id.slice(-6)}</strong> has been successfully confirmed ✅.</p>
+<p>Your payment for booking <strong>${booking._id.toString().slice(-6)}</strong> has been successfully confirmed ✅.</p>
     <p>Thank you for using our service!</p>
     <p>Team</p>
   `;
   await sendMail({
     from: process.env.EMAIL_FROM,
     to: user.email,
-    subject: `Payment Confirmed — Booking ${booking._id.slice(-6)}`,
+subject: `Payment Confirmed — Booking ${booking._id?.toString().slice(-6) || "N/A"}`,
     html,
   });
 };
@@ -330,7 +330,7 @@ const sendPaymentConfirmationEmail = async (booking, adminEmails = []) => {
 
     const html = `
       <h2>Payment Confirmation Requested</h2>
-      <p><strong>Booking ID:</strong> ${booking._id}</p>
+      <p><strong>Booking ID:</strong> ${booking._id.toString().slice(-6)}</p>
       <p><strong>User:</strong> ${booking.user.firstName} ${booking.user.lastName}</p>
       <p><strong>Email:</strong> ${booking.user.email}</p>
       <p><strong>Amount:</strong> ₦${booking.totalPrice?.toLocaleString() || "N/A"}</p>
@@ -349,6 +349,44 @@ const sendPaymentConfirmationEmail = async (booking, adminEmails = []) => {
     console.error("Error sending payment confirmation email:", error);
   }
 };
+/// ✅ Send Contact Message to Admins
+const sendContactEmailToAdmin = async (formData, adminEmails = []) => {
+  try {
+    if (!Array.isArray(adminEmails) || adminEmails.length === 0) {
+      console.warn("⚠️ No admin emails provided for contact message.");
+      return;
+    }
+
+    const { firstName, lastName, email, phone, service, message } = formData;
+
+    const html = `
+      <h2>📩 New Contact Message from Website</h2>
+      <p><strong>Name:</strong> ${firstName || ""} ${lastName || ""}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
+      <p><strong>Service Needed:</strong> ${service || "Not specified"}</p>
+      <hr />
+      <p><strong>Message:</strong></p>
+      <p style="white-space: pre-wrap;">${message}</p>
+      <hr />
+      <p>🕒 Sent on: ${new Date().toLocaleString()}</p>
+    `;
+
+    await transport.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: adminEmails.join(", "),
+      subject: `New Contact Message from ${firstName || "Visitor"}`,
+      html,
+    });
+
+    console.log("📤 Contact message sent to admins:", adminEmails);
+  } catch (error) {
+    console.error("❌ Error sending contact message to admin:", error);
+  }
+};
+
+
+
 
 
 module.exports = {
@@ -362,5 +400,6 @@ module.exports = {
   sendNewAdminPasswordEmail,
   sendPaymentConfirmedEmail,
   sendPaymentConfirmationEmail,
+  sendContactEmailToAdmin,
   transport
 };

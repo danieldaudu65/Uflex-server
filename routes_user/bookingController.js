@@ -265,6 +265,7 @@ router.post("/create_booking", authenticateUser, async (req, res) => {
       serviceType,
       vehicle,
       bookingDate,
+      is_excort,
       bookingTime,
       totalPrice,
       notes,
@@ -295,6 +296,7 @@ router.post("/create_booking", authenticateUser, async (req, res) => {
       dropoffLocation,
       serviceType,
       vehicle,
+      is_excort,
       bookingDate,
       bookingTime,
       notes,
@@ -542,7 +544,8 @@ router.post("/confirm_payment", authenticateUser, async (req, res) => {
   }
 });
 
-// ✅ Check Payment Status
+
+// Check Payment Status
 router.post("/check_payment_status", async (req, res) => {
   try {
     const { bookingId } = req.body;

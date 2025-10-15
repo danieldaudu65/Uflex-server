@@ -20,9 +20,8 @@ const allowedOrigins = [
   "http://localhost:5175",
   "http://localhost:5173",
   "http://localhost:5174",
+  "http://localhost:5176",
 ];
-
-
 
 // CORS middleware
 app.use(cors({
@@ -50,6 +49,7 @@ app.use("/bookingController", require("./routes_user/bookingController"));
 app.use("/paymentController", require("./routes_user/paymentController"));
 app.use("/vehicleController", require("./routes_user/vehicleController"));
 
+app.use('/user_report', require("./routes_user/report"))
 
 // Routes Admin
 app.use('/admin_auth' , require('./route_admin/auth'))

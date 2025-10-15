@@ -86,8 +86,8 @@ router.post("/rider", async (req, res) => {
     res.status(500).json({ success: false, msg: "Server error fetching rider details" });
   }
 });
-
-router.post("/rider/delete", async (req, res) => {
+// ===== Delete Rider ===== //
+router.post("/delete", async (req, res) => {
   const { token, riderId } = req.body;
 
   if (!token || !riderId) {
@@ -95,46 +95,54 @@ router.post("/rider/delete", async (req, res) => {
   }
 
   try {
-    // Verify admin
+    // ✅ Verify admin
     const adminDecode = jwt.verify(token, process.env.JWT_SECRET);
     const admin = await Admin.findById(adminDecode.id);
     if (!admin) {
       return res.status(401).json({ success: false, msg: "Unauthorized" });
     }
 
-    // Delete rider
+    // ✅ Delete rider
     const deletedRider = await Rider.findByIdAndDelete(riderId);
     if (!deletedRider) {
       return res.status(404).json({ success: false, msg: "Rider not found" });
     }
 
-    res.status(200).json({ success: true, msg: "Rider deleted successfully", rider: deletedRider });
+    res.status(200).json({
+      success: true,
+      msg: "Rider deleted successfully",
+      rider: deletedRider,
+    });
   } catch (error) {
     console.error("Error deleting rider:", error);
     res.status(500).json({ success: false, msg: "Server error while deleting rider" });
   }
 });
 
-// ===== Block / Unblock a rider ===== //
-router.post("/rider/block", async (req, res) => {
+
+// ===== Block / Unblock Rider ===== //
+router.post("/block", async (req, res) => {
   const { token, riderId, block } = req.body; // block = true (block) / false (unblock)
 
   if (!token || !riderId || typeof block !== "boolean") {
-    return res.status(400).json({ success: false, msg: "Please provide token, riderId, and block status" });
+    return res.status(400).json({
+      success: false,
+      msg: "Please provide token, riderId, and block status (boolean)",
+    });
   }
 
   try {
-    // Verify admin
+    // ✅ Verify admin
     const adminDecode = jwt.verify(token, process.env.JWT_SECRET);
     const admin = await Admin.findById(adminDecode.id);
     if (!admin) {
       return res.status(401).json({ success: false, msg: "Unauthorized" });
     }
 
-    // Update rider status
+    // ✅ Update rider active status (your schema uses `is_active`)
     const rider = await Rider.findByIdAndUpdate(
       riderId,
-      { status: block ? "inactive" : "active" },
+      { is_active: !block }, // block = true → set false
       { new: true }
     ).select("-password");
 

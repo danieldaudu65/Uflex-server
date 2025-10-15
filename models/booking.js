@@ -8,9 +8,10 @@ const BookingSchema = new mongoose.Schema(
     pickupLocation: String,
     dropoffLocation: String,
     serviceType: String,
+    is_excort: { type: Boolean, default: false },
     bookingStatus: {
       type: String,
-      enum: ["requested", "confirmed", "completed", "cancelled"],
+      enum: ["requested", "assigned", "started", "completed", "cancelled"],
       default: "requested",
     },
     totalPrice: Number,
@@ -19,6 +20,9 @@ const BookingSchema = new mongoose.Schema(
       enum: ["unpaid", "paid"],
       default: "unpaid",
     },
+    startTime: { type: Date },
+    endTime: { type: Date },
+    totalDuration: { type: Number }, // in minutes
   },
   { timestamps: true }
 );

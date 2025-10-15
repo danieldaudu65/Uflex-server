@@ -10,7 +10,7 @@ const RiderSchema = new mongoose.Schema(
     vehicle: { type: String },
 
     // Rider status (active = can take trips)
-    is_active: { type: Boolean, default: false },
+    is_active: { type: Boolean, default: true },
 
     // Rider Statistics
     total_assigned_booking: { type: Number, default: 0 },

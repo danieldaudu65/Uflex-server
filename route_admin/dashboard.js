@@ -6,7 +6,7 @@ const Booking = require("../models/booking");
 const Rider = require("../models/rider");
 const Admin = require("../models/admin");
 const Statistics = require("../models/statistics");
-const { sendPaymentEmailToUser, sendPaymentConfirmedEmail } = require("../utils/nodemailer");
+const { sendPaymentEmailToUser, sendPaymentConfirmedEmail, sendAssignmentEmailToRider } = require("../utils/nodemailer");
 
 // 🔐 Verify Admin Token (Reusable)
 const verifyAdminFromHeader = async (req, res) => {
@@ -46,21 +46,35 @@ route.post("/get_record", async (req, res) => {
   }
 });
 
+
 /* ===========================================
-   🧾 2. Get Recent Bookings
+   🧾 2. Get Recent Bookings (with Payment Status Sync)
 =========================================== */
 route.post("/get_recent", async (req, res) => {
   try {
     await verifyAdminFromHeader(req, res);
     const { limit = 10 } = req.body;
 
+    // 🔍 Fetch recent bookings
     const recentBookings = await Booking.find()
       .populate("user", "firstName lastName email")
       .populate("rider", "firstName lastName email")
       .sort({ createdAt: -1 })
       .limit(Number(limit));
 
-    const formatted = recentBookings.map((b) => ({
+    // ✅ Ensure paymentStatus consistency (auto-default if missing)
+    const updatedBookings = await Promise.all(
+      recentBookings.map(async (b) => {
+        if (!b.paymentStatus) {
+          b.paymentStatus = "unpaid"; // default unpaid
+          await b.save();
+        }
+        return b;
+      })
+    );
+
+    // 🧾 Format response
+    const formatted = updatedBookings.map((b) => ({
       _id: b._id,
       bookingId: b.bookingId,
       pickupLocation: b.pickupLocation,
@@ -69,7 +83,9 @@ route.post("/get_recent", async (req, res) => {
       bookingDate: b.bookingDate,
       bookingTime: b.bookingTime,
       totalPrice: b.totalPrice,
+      is_excort: b.is_excort,
       bookingStatus: b.bookingStatus,
+      paymentStatus: b.paymentStatus, // ✅ added here
       user: b.user
         ? {
           _id: b.user._id,
@@ -89,12 +105,20 @@ route.post("/get_recent", async (req, res) => {
       createdAt: b.createdAt,
     }));
 
-    res.status(200).json({ success: true, message: "Recent bookings fetched successfully", data: formatted });
+    res.status(200).json({
+      success: true,
+      message: "Recent bookings fetched successfully",
+      data: formatted,
+    });
   } catch (err) {
     console.error("Error fetching recent bookings:", err);
-    res.status(500).json({ success: false, message: err.message || "Server error" });
+    res.status(500).json({
+      success: false,
+      message: err.message || "Server error",
+    });
   }
 });
+
 /* ===========================================
    💰 3. Set Booking Price + Send Payment Email
 =========================================== */
@@ -131,7 +155,6 @@ route.post("/set_price", async (req, res) => {
     res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 });
-
 /* ===========================================
    🧍 4. Assign Rider to Booking
 =========================================== */
@@ -145,25 +168,57 @@ route.post("/assign_rider", async (req, res) => {
     }
 
     const booking = await Booking.findById(bookingId).populate("user", "firstName lastName email");
-    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
 
     const rider = await Rider.findById(riderId).select("-password");
-    if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
+    if (!rider) {
+      return res.status(404).json({ success: false, message: "Rider not found" });
+    }
 
-    if (rider.is_active === false || rider.status === "inactive") {
+    if (rider.is_active === false) {
       return res.status(400).json({ success: false, message: "Rider is inactive" });
     }
 
+    // ✅ Assign rider and update booking
     booking.rider = rider._id;
-    booking.bookingStatus = "Assigned";
+    booking.bookingStatus = "assigned";
     await booking.save();
 
-    res.json({ success: true, message: "Rider assigned successfully", booking, rider });
+    // ✅ Increment rider statistics
+    rider.total_assigned_booking += 1;
+    rider.total_pending_booking += 1;
+
+    // ✅ Add the booking to the rider’s assigned list (optional)
+    if (!rider.assignedBookings.includes(booking._id)) {
+      rider.assignedBookings.push(booking._id);
+    }
+
+    await rider.save();
+
+    // ✅ Send assignment email
+    try {
+      await sendAssignmentEmailToRider(booking, rider);
+    } catch (err) {
+      console.error("Email send error:", err);
+    }
+
+    res.json({
+      success: true,
+      message: "Rider assigned successfully. Stats updated and email sent.",
+      booking,
+      rider,
+    });
   } catch (err) {
     console.error("Error assigning rider:", err);
-    res.status(500).json({ success: false, message: err.message || "Server error" });
+    res.status(500).json({
+      success: false,
+      message: err.message || "Server error",
+    });
   }
 });
+
 
 /* ===========================================
    👥 5. Get All Riders
@@ -178,7 +233,6 @@ route.get("/all_riders", async (req, res) => {
     res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 });
-
 
 // /* ===========================================
 // / ✅ Toggle payment status

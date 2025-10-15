@@ -95,7 +95,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
 // Forgot password route
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -122,24 +121,48 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // Verify OTP route
+// ✅ Verify OTP and Reset Password
 router.post('/verify-otp', async (req, res) => {
-  const { otp } = req.body;
+  const { otp, newPassword } = req.body;
 
   try {
+    // 1️⃣ Validate input
+    if (!otp || !newPassword ) {
+      return res.status(400).json({ msg: 'All fields are required' });
+    }
+
+    // if (newPassword ) {
+    //   return res.status(400).json({ msg: 'Passwords do not match' });
+    // }
+
+    // 2️⃣ Find user with OTP
     const user = await User.findOne({ otp });
 
     if (!user) {
-      return res.status(400).send({ msg: 'Invalid OTP' });
+      return res.status(400).json({ msg: 'Invalid OTP' });
     }
 
-    if (user.otp !== otp || Date.now() > user.otptime) {
-      return res.status(400).send({ msg: 'Invalid or expired OTP' });
+    // 3️⃣ Check expiry time (assuming you saved user.otptime when sending OTP)
+    if (Date.now() > user.otptime) {
+      return res.status(400).json({ msg: 'OTP has expired' });
     }
 
-    res.status(200).send({ msg: 'OTP verified successfully' });
+    // 4️⃣ Hash new password
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 5️⃣ Update user record
+    user.passwordHash = hashedPassword;
+    user.otp = null;        // clear OTP
+    user.otptime = null;    // clear OTP time
+    await user.save();
+
+    // 6️⃣ Send success response
+    res.status(200).json({ msg: 'Password reset successful!' });
+
   } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).send({ msg: 'Server error' });
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 

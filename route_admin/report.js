@@ -29,7 +29,7 @@ router.post("/users_unresolved", async (req, res) => {
     await verifyAdmin(token);
 
     const page = Math.max(0, pageCount - 1);
-    const query = { reporter: "user", is_resolved: false };
+    const query = {  is_resolved: false };
 
     const [reports, count] = await Promise.all([
       Report.find(query)
