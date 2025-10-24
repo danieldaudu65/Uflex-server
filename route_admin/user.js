@@ -28,7 +28,7 @@ const verifyAdminMiddleware = async (req, res, next) => {
 // Get all users
 route.post("/all_users", verifyAdminMiddleware, async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+const users = await User.find().sort({ createdAt: -1 }).select("-password");
     res.status(200).json({
       message: "All users fetched successfully",
       total: users.length,

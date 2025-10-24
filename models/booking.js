@@ -7,6 +7,8 @@ const BookingSchema = new mongoose.Schema(
     vehicle: String,
     pickupLocation: String,
     dropoffLocation: String,
+    bookingDate: String,
+    bookingTime: String,
     serviceType: String,
     is_excort: { type: Boolean, default: false },
     bookingStatus: {

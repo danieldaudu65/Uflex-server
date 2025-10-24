@@ -315,7 +315,7 @@ const sendPaymentConfirmedEmail = async (booking) => {
   await sendMail({
     from: process.env.EMAIL_FROM,
     to: user.email,
-subject: `Payment Confirmed — Booking ${booking._id?.toString().slice(-6) || "N/A"}`,
+    subject: `Payment Confirmed — Booking ${booking._id?.toString().slice(-6) || "N/A"}`,
     html,
   });
 };
@@ -385,9 +385,62 @@ const sendContactEmailToAdmin = async (formData, adminEmails = []) => {
   }
 };
 
+// ✅ Send a welcome email to the user
+const sendEmailToUserForNewsLetterJoin = async (email) => {
+  try {
+    const html = `
+      <h2>🎉 Welcome to the Uflex Newsletter!</h2>
+      <p>Hey there,</p>
+      <p>Thanks for joining the <strong>Uflex community</strong>! 🌍</p>
+      <p>You'll now receive updates on our latest innovations, products, and exclusive offers — straight to your inbox.</p>
+      <hr />
+      <p>Stay connected,<br /><strong>The Uflex Team</strong></p>
+      <p style="font-size:12px;color:#888;">You received this email because you subscribed on the Uflex website.</p>
+    `;
+
+    await transport.sendMail({
+      from: process.env.EMAIL_FROM || '"Uflex" <no-reply@uflex.com>',
+      to: email,
+      subject: "Welcome to the Uflex Newsletter 🚀",
+      html,
+    });
+
+    console.log("✅ Welcome email sent to user:", email);
+  } catch (error) {
+    console.error("❌ Error sending welcome email to user:", error);
+  }
+};
 
 
+// ✅ Notify Uflex Admins about a new newsletter signup
+const sendEmailToAdminForNewsLetterJoin = async (email, adminEmails = []) => {
+  try {
+    if (!Array.isArray(adminEmails) || adminEmails.length === 0) {
+      console.warn("⚠️ No admin emails provided for newsletter notification.");
+      return;
+    }
 
+    const html = `
+      <h2>📬 New Newsletter Subscription</h2>
+      <p>A new user has just subscribed to the <strong>Uflex Newsletter</strong>.</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <hr />
+      <p>🕒 Joined on: ${new Date().toLocaleString()}</p>
+      <p style="font-size:12px;color:#888;">This is an automated notification from the Uflex system.</p>
+    `;
+
+    await transport.sendMail({
+      from: process.env.EMAIL_FROM || '"Uflex Notifications" <no-reply@uflex.com>',
+      to: adminEmails.join(", "),
+      subject: "New Uflex Newsletter Subscriber",
+      html,
+    });
+
+    console.log("📤 Newsletter join alert sent to Uflex admins:", adminEmails);
+  } catch (error) {
+    console.error("❌ Error sending newsletter alert to admin:", error);
+  }
+};
 
 module.exports = {
   sendAssignmentEmailToRider,
@@ -401,5 +454,7 @@ module.exports = {
   sendPaymentConfirmedEmail,
   sendPaymentConfirmationEmail,
   sendContactEmailToAdmin,
-  transport
+  sendEmailToUserForNewsLetterJoin,          
+  sendEmailToAdminForNewsLetterJoin,        
+  transport,
 };

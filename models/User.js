@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   profilePicture: { type: String },
 
+  uflex_Id: String,
   otp: String,
   otptime: Date,
 

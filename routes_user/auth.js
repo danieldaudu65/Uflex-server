@@ -7,7 +7,15 @@ require('dotenv').config();
 const User = require('../models/User');
 const { sendOTP } = require('../utils/nodemailer');
 
+function generateUflexId(fullName = '') {
+  const cleanName = fullName.replace(/\s+/g, '').toUpperCase().slice(0, 3);
+  const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase(); // 5 chars
+  return (cleanName + randomPart).slice(0, 8);
+}
+
+
 const router = express.Router();
+
 
 // Endpoint for user to sign up
 router.post('/signup', async (req, res) => {
@@ -47,6 +55,7 @@ router.post('/signup', async (req, res) => {
 });
 
 // Endpoint for user to log in
+
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -56,45 +65,55 @@ router.post('/login', async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
+    if (!user) return res.status(400).send({ status: 'Error', msg: 'Incorrect email or password' });
 
-    if (!user) {
-      return res.status(400).send({ status: 'Error', msg: 'Incorrect email or password' });
-    }
-
-    // Compare password with hashed version
     const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch)
+      return res.status(400).send({ status: 'Error', msg: 'Incorrect email or password' });
 
-    if (isMatch) {
-      const token = jwt.sign(
-        { userId: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' } // 🔥 Token now valid for 7 days
-      );
+    // ✅ Create token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-      user.is_online = true;
-      await user.save();
+    // ✅ Mark online
+    user.is_online = true;
 
-      // Clean user object before sending
-      const userObj = user.toObject();
-      delete userObj.passwordHash;
-      delete userObj.__v;
+    // ✅ Generate uflex_Id if not exists
+    if (!user.uflex_Id) {
+      let newId;
+      let isUnique = false;
 
-      res.status(200).send({
-        status: 'Success',
-        msg: 'You have successfully logged in',
-        user: userObj,
-        token
-      });
-    } else {
-      res.status(400).send({ status: 'Error', msg: 'Incorrect email or password' });
+      // Loop until we get a unique ID
+      while (!isUnique) {
+        newId = generateUflexId(`${user.firstName || ''}${user.lastName || ''}`);
+        const existing = await User.findOne({ uflex_Id: newId });
+        if (!existing) isUnique = true;
+      }
+
+      user.uflex_Id = newId;
     }
+
+    await user.save();
+
+    const userObj = user.toObject();
+    delete userObj.passwordHash;
+    delete userObj.__v;
+
+    res.status(200).send({
+      status: 'Success',
+      msg: 'You have successfully logged in',
+      user: userObj,
+      token
+    });
 
   } catch (error) {
     console.error(error);
     res.status(500).send({ status: "error", msg: error.message });
   }
 });
-
 // Forgot password route
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -127,7 +146,7 @@ router.post('/verify-otp', async (req, res) => {
 
   try {
     // 1️⃣ Validate input
-    if (!otp || !newPassword ) {
+    if (!otp || !newPassword) {
       return res.status(400).json({ msg: 'All fields are required' });
     }
 

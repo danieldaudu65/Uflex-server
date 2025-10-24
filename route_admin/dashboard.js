@@ -241,7 +241,6 @@ route.post("/toggle_payment_status", async (req, res) => {
   try {
     const { bookingId, status } = req.body;
 
-
     await verifyAdminFromHeader(req, res);
 
     if (!bookingId || !status) {
@@ -254,11 +253,21 @@ route.post("/toggle_payment_status", async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
+    // Only update total_revenue if changing to "paid" from "unpaid"
+    const wasUnpaid = booking.paymentStatus !== "paid";
+
     booking.paymentStatus = status;
     await booking.save();
 
-    // ✅ Send payment confirmation email only when marked as paid
-    if (status === "paid") {
+    // Increment total revenue if marking as paid and it was previously unpaid
+    if (status === "paid" && wasUnpaid && booking.totalPrice > 0) {
+      const stats = await Statistics.findOne({ doc_type: "admin" });
+      if (stats) {
+        stats.total_revenue += booking.totalPrice;
+        stats.total_booking_earnings += booking.totalPrice; // optional if you track earnings separately
+        await stats.save();
+      }
+
       await sendPaymentConfirmedEmail(booking);
     }
 
@@ -272,6 +281,7 @@ route.post("/toggle_payment_status", async (req, res) => {
     res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 });
+
 
 // ✅ Fetch payment status for a specific booking
 route.get("/payment_status/:bookingId", async (req, res) => {

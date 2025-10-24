@@ -54,6 +54,7 @@ app.use("/paymentController", require("./routes_user/paymentController"));
 app.use("/vehicleController", require("./routes_user/vehicleController"));
 
 app.use('/user_report', require("./routes_user/report"))
+app.use('/user_news', require("./routes_user/newletter"))
 
 // Routes Admin
 app.use('/admin_auth', require('./route_admin/auth'))

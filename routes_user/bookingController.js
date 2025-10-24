@@ -508,11 +508,13 @@ router.post("/refresh_booking", authenticateUser, async (req, res) => {
   }
 });
 
-
+router
 
 router.post("/confirm_payment", authenticateUser, async (req, res) => {
   try {
     const { bookingId } = req.body;
+    console.log(bookingId);
+    
 
     if (!bookingId) {
       return res.status(400).json({ success: false, message: "bookingId is required" });
@@ -572,6 +574,81 @@ router.post("/check_payment_status", async (req, res) => {
     });
   }
 });
+
+// ===== Get Full Booking Details (Based on Actual Schema) ===== //
+router.post("/booking/details", authenticateUser, async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "bookingId is required",
+      });
+    }
+
+    // Fetch booking and populate related models
+    const booking = await Booking.findById(bookingId)
+      .populate("user", "firstName lastName email phoneNumber profilePicture")
+      .populate("rider", "firstName lastName email phone vehicle total_assigned_booking total_completed_booking total_pending_booking")
+      .lean();
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    // Format tracking info based on your bookingStatus values
+    const trackingInfo = {
+      requested: booking.bookingStatus === "requested",
+      assigned: booking.bookingStatus === "assigned",
+      started: booking.bookingStatus === "started",
+      completed: booking.bookingStatus === "completed",
+      cancelled: booking.bookingStatus === "cancelled",
+      is_escort: booking.is_excort || false,
+    };
+
+    // Construct clean response payload
+    const formattedBooking = {
+      booking_id: booking._id,
+      user: booking.user || null,
+      rider: booking.rider || null,
+      vehicle: booking.vehicle || null,
+      pickupLocation: booking.pickupLocation,
+      dropoffLocation: booking.dropoffLocation,
+      bookingDate: booking.bookingDate,
+      bookingTime: booking.bookingTime,
+      serviceType: booking.serviceType,
+      is_excort: booking.is_excort || false,
+      totalPrice: booking.totalPrice || 0,
+      paymentStatus: booking.paymentStatus,
+      bookingStatus: booking.bookingStatus,
+      startTime: booking.startTime || null,
+      endTime: booking.endTime || null,
+      totalDuration: booking.totalDuration || null,
+      trackingInfo,
+      timestamps: {
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+      },
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Booking details retrieved successfully",
+      data: formattedBooking,
+    });
+  } catch (err) {
+    console.error("Error fetching booking details:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Server error",
+    });
+  }
+});
+
 
 
 
