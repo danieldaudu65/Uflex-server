@@ -248,48 +248,55 @@ Team`;
   }
 }
 
-
 const sendPaymentEmailToUser = async (booking, price, paymentInfo = {}) => {
   try {
     if (!booking?.user?.email) return;
 
     const user = booking.user;
-    const bank = process.env.PAYMENT_BANK_NAME || 'Your Bank';
-    const account = process.env.PAYMENT_ACCOUNT_NUMBER || '0000000000';
-    const accountName = process.env.PAYMENT_ACCOUNT_NAME || 'Company Name';
+
+    // ✅ Hardcoded payment details (U-FLEX)
+    const bank = "KEYSTONE Bank";
+    const account = "1013288276";
+    const accountName = "U-FLEX SHUTTLE SERVICES";
 
     const text = `Hello ${user.firstName || ''},
 
-A payment of ₦${Number(price).toLocaleString()} has been requested for your booking (${booking._id.toString().slice(-6)
-      }).
+A payment of ₦${Number(price).toLocaleString()} has been requested for your booking (${booking._id.toString().slice(-6)}).
 
 Pickup: ${booking.pickupLocation || booking.fromLocation || 'N/A'}
 Dropoff: ${booking.dropoffLocation || booking.toLocation || 'N/A'}
 
 Please make payment to:
-Bank: ${bank}
-Account Number: ${account}
 Account Name: ${accountName}
+Account Number: ${account}
+Bank Name: ${bank}
 
-If you have already paid, please ignore or reply with proof.
+If you have already paid, please ignore or reply with proof of payment.
 
 Thank you,
-Team`;
+U-FLEX Team`;
 
-    const html = `<p>Hello ${user.firstName || ''},</p>
-<p>A payment of <strong>₦${Number(price).toLocaleString()}</strong> has been requested for your booking (<strong>${booking._id.toString().slice(-6)}</strong>).</p>
-<ul>
-  <li>Pickup: ${booking.pickupLocation || booking.fromLocation || 'N/A'}</li>
-  <li>Dropoff: ${booking.dropoffLocation || booking.toLocation || 'N/A'}</li>
-</ul>
-<p>Please make payment to:</p>
-<ul>
-  <li><strong>Bank:</strong> ${bank}</li>
-  <li><strong>Account Number:</strong> ${account}</li>
-  <li><strong>Account Name:</strong> ${accountName}</li>
-</ul>
-<p>If you have already paid, please ignore or reply with proof.</p>
-<p>Thanks,<br/>Team</p>`;
+    const html = `
+      <p>Hello ${user.firstName || ''},</p>
+      <p>
+        A payment of <strong>₦${Number(price).toLocaleString()}</strong> has been requested for your booking 
+        (<strong>${booking._id.toString().slice(-6)}</strong>).
+      </p>
+      <ul>
+        <li><strong>Pickup:</strong> ${booking.pickupLocation || booking.fromLocation || 'N/A'}</li>
+        <li><strong>Dropoff:</strong> ${booking.dropoffLocation || booking.toLocation || 'N/A'}</li>
+      </ul>
+
+      <p>Please make payment to:</p>
+      <ul>
+        <li><strong>Account Name:</strong> U-FLEX SHUTTLE SERVICES</li>
+        <li><strong>Account Number:</strong> 1013288276</li>
+        <li><strong>Bank Name:</strong> KEYSTONE Bank</li>
+      </ul>
+
+      <p>If you have already paid, please ignore or reply with proof of payment.</p>
+      <p>Thanks,<br/>U-FLEX Team</p>
+    `;
 
     await sendMail({
       from: process.env.EMAIL_FROM,
@@ -298,11 +305,13 @@ Team`;
       text,
       html,
     });
+
   } catch (err) {
-    console.error('sendPaymentEmailToUser error', err);
+    console.error("sendPaymentEmailToUser error", err);
     throw err;
   }
-}
+};
+
 
 const sendPaymentConfirmedEmail = async (booking) => {
   const user = booking.user;
@@ -454,7 +463,7 @@ module.exports = {
   sendPaymentConfirmedEmail,
   sendPaymentConfirmationEmail,
   sendContactEmailToAdmin,
-  sendEmailToUserForNewsLetterJoin,          
-  sendEmailToAdminForNewsLetterJoin,        
+  sendEmailToUserForNewsLetterJoin,
+  sendEmailToAdminForNewsLetterJoin,
   transport,
 };

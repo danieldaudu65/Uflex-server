@@ -236,40 +236,42 @@ route.get("/all_riders", async (req, res) => {
 
 // /* ===========================================
 // / ✅ Toggle payment status
-
 route.post("/toggle_payment_status", async (req, res) => {
   try {
     const { bookingId, status } = req.body;
 
     await verifyAdminFromHeader(req, res);
 
-    if (!bookingId || !status) {
+    if (!bookingId || !status)
       return res.status(400).json({ success: false, message: "Missing parameters" });
-    }
 
-    const booking = await Booking.findById(bookingId).populate("user");
+    const booking = await Booking.findById(bookingId).populate("user", "email name");
 
-    if (!booking) {
+    if (!booking)
       return res.status(404).json({ success: false, message: "Booking not found" });
-    }
 
-    // Only update total_revenue if changing to "paid" from "unpaid"
     const wasUnpaid = booking.paymentStatus !== "paid";
-
     booking.paymentStatus = status;
-    await booking.save();
 
-    // Increment total revenue if marking as paid and it was previously unpaid
+    const ops = [booking.save()];
+
     if (status === "paid" && wasUnpaid && booking.totalPrice > 0) {
-      const stats = await Statistics.findOne({ doc_type: "admin" });
-      if (stats) {
-        stats.total_revenue += booking.totalPrice;
-        stats.total_booking_earnings += booking.totalPrice; // optional if you track earnings separately
-        await stats.save();
-      }
-
-      await sendPaymentConfirmedEmail(booking);
+      ops.push(
+        Statistics.findOneAndUpdate(
+          { doc_type: "admin" },
+          {
+            $inc: {
+              total_revenue: booking.totalPrice,
+              total_booking_earnings: booking.totalPrice,
+            },
+          }
+        )
+      );
+      // Run email in background
+      sendPaymentConfirmedEmail(booking).catch(console.error);
     }
+
+    await Promise.all(ops);
 
     res.status(200).json({
       success: true,
