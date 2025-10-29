@@ -141,20 +141,20 @@ route.post("/set_price", async (req, res) => {
     booking.paymentStatus = "unpaid";
     await booking.save();
 
-    // ✅ Send payment email to the user
-    try {
-      await sendPaymentEmailToUser(booking, price, paymentInfo);
-    } catch (emailError) {
-      console.error("Error sending payment email:", emailError);
-    }
+    // ⚡ Respond to admin immediately
+    res.json({ success: true, message: "Price set successfully (email will be sent shortly)", booking });
 
-    // Response to admin
-    res.json({ success: true, message: "Price set successfully & email sent", booking });
+    // 📨 Send payment email in the background (non-blocking)
+    sendPaymentEmailToUser(booking, price, paymentInfo)
+      .then(() => console.log(`Email sent to ${booking.user.email}`))
+      .catch((emailError) => console.error("Error sending payment email:", emailError));
+
   } catch (err) {
     console.error("Error setting price:", err);
     res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 });
+
 /* ===========================================
    🧍 4. Assign Rider to Booking
 =========================================== */
