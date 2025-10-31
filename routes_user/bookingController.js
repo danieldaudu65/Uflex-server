@@ -508,14 +508,10 @@ router.post("/refresh_booking", authenticateUser, async (req, res) => {
   }
 });
 
-router
-
+// ===== Confirm Payment (Notify Admins) ===== //
 router.post("/confirm_payment", authenticateUser, async (req, res) => {
   try {
     const { bookingId } = req.body;
-    console.log(bookingId);
-    
-
     if (!bookingId) {
       return res.status(400).json({ success: false, message: "bookingId is required" });
     }
@@ -525,21 +521,21 @@ router.post("/confirm_payment", authenticateUser, async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // ✅ Fetch all admins from DB
-    const admins = await admin.find();
-    const adminEmails = admins.map((a) => a.email);
-
-    if (adminEmails.length === 0) {
-      return res.status(404).json({ success: false, message: "No admins found to notify" });
-    }
-
-    // ✅ Send mail to all admin emails
-    await sendPaymentConfirmationEmail(booking, adminEmails);
-
+    // ✅ Respond immediately
     res.status(200).json({
       success: true,
       message: "Payment confirmation sent to all admins.",
     });
+
+    // 🧵 Continue in background
+    (async () => {
+      const admins = await admin.find();
+      const adminEmails = admins.map((a) => a.email);
+      if (adminEmails.length > 0) {
+        await sendPaymentConfirmationEmail(booking, adminEmails);
+      }
+    })().catch((err) => console.error("Email sending failed:", err));
+
   } catch (err) {
     console.error("Error confirming payment:", err);
     res.status(500).json({ success: false, message: err.message });

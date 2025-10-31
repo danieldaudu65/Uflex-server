@@ -26,6 +26,8 @@ const statistics_schema = new mongoose.Schema(
     total_cancelled_bookings: { type: Number, default: 0 },
     total_cancelled_by_users: { type: Number, default: 0 },
     total_cancelled_by_riders: { type: Number, default: 0 },
+    total_cancelled_by_admins: { type: Number, default: 0 }, // ✅ new
+
     active_bookings: { type: Number, default: 0 },
 
     // Report stats

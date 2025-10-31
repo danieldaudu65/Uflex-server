@@ -313,6 +313,85 @@ route.get("/payment_status/:bookingId", async (req, res) => {
   }
 });
 
+/* ===========================================
+   ❌ 6. Cancel a Booking (Admin)
+=========================================== */
+const Statistics = require("../../models/statistics");
+
+route.post("/cancel_booking", async (req, res) => {
+  try {
+    await verifyAdminFromHeader(req, res);
+    const { bookingId, reason } = req.body;
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate("user", "firstName lastName email")
+      .populate("rider", "firstName lastName email");
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    if (booking.bookingStatus === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Booking is already cancelled",
+      });
+    }
+
+    // ✅ Update booking
+    booking.bookingStatus = "cancelled";
+    booking.cancellationReason = reason || "No reason provided";
+    await booking.save();
+
+    // ✅ Update Rider stats if assigned
+    if (booking.rider) {
+      await Rider.findByIdAndUpdate(booking.rider, {
+        $inc: { total_pending_booking: -1 },
+      });
+    }
+
+    // ✅ Update global statistics
+    await Statistics.updateOne(
+      { doc_type: "admin" },
+      {
+        $inc: {
+          total_cancelled_bookings: 1,
+          total_cancelled_by_admins: 1,
+          active_bookings: -1,
+        },
+      },
+      { upsert: true }
+    );
+
+    // // ✅ Send cancellation email asynchronously
+    // sendBookingCancelledEmail(booking)
+    //   .then(() => console.log(`Cancellation email sent to ${booking.user.email}`))
+    //   .catch((err) => console.error("Error sending cancellation email:", err));
+
+    res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully",
+      booking,
+    });
+  } catch (err) {
+    console.error("Error cancelling booking:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Server error",
+    });
+  }
+});
+
 
 
 
